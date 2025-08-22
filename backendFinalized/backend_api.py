@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 MODEL_PATH = os.getenv("MODEL_PATH", "rf_btc_model.pkl")
 SCALER_PATH = os.getenv("SCALER_PATH", "scaler.pkl")
-ACCURACY_NOTE = "Approximately 60.87%"  # from teammate’s note
+ACCURACY_NOTE = "Approximately 60.87%"  
 
 # ---------- Helpers ----------
 def load_artifacts():
@@ -32,7 +32,7 @@ def load_artifacts():
 def fetch_btc_yfinance(days=90):
     try:
         df = yf.download("BTC-USD", period=f"{days}d", interval="1d", auto_adjust=False, progress=False)
-        df = df.rename(columns=str.title)  # ensure 'Close','Volume'
+        df = df.rename(columns=str.title)  
         df = df[["Close", "Volume"]].dropna()
         if df.empty:
             raise ValueError("Empty dataframe from yfinance.")
@@ -70,7 +70,7 @@ def compute_rsi(close: pd.Series, period: int = 14) -> pd.Series:
     delta = close.diff()
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
-    # Wilder’s smoothing
+    
     avg_gain = gain.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
     avg_loss = loss.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
     rs = avg_gain / (avg_loss.replace(0, np.nan))
@@ -87,7 +87,7 @@ def compute_features(df: pd.DataFrame):
     df["RSI14"] = compute_rsi(df["Close"], period=14)
     df["Volatility21"] = df["Return"].rolling(window=21).std()
 
-    latest = df.dropna().iloc[-1]  # ensure all features exist
+    latest = df.dropna().iloc[-1]  
     features = np.array([
         latest["Close"],
         latest["RSI14"],
@@ -130,7 +130,7 @@ def predict():
     try:
         features = get_latest_features()
         features_scaled = scaler.transform(features.reshape(1, -1))
-        pred = model.predict(features_scaled)[0]  # assume 1 = Up, 0 = Down (your training must match)
+        pred = model.predict(features_scaled)[0]  
         label = "Up" if int(pred) == 1 else "Down"
         return jsonify({
             "status": "success",
@@ -182,5 +182,5 @@ def historical():
 
 
 if __name__ == "__main__":
-    # For local dev
+    
     app.run(host="0.0.0.0", port=5000, debug=True)
