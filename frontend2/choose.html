@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Model</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            padding: 3rem 4rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        h1 {
+            font-weight: 600;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        .btn {
+            display: block;
+            margin: 1rem auto;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            background: #ff7f50;
+            color: #fff;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            background: #ff4500;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Select Model</h1>
+    <button class="btn" onclick="location.href='index.html'">BTC Prediction</button>
+    <button class="btn" onclick="location.href='index2.html'">Currency Prediction</button>
+</div>
+</body>
+</html>

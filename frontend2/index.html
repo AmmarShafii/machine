@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC Next-Day Prediction Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 1rem 1rem 1rem;
+            background: #1e1e2f;
+            color: #fff;
+        }
+
+            header h1 {
+                margin: 0;
+                font-size: 2rem;
+            }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #ffffff, #e3e6f0);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .prediction-label {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+            .prediction-label.up {
+                color: #28a745;
+            }
+
+            .prediction-label.down {
+                color: #dc3545;
+            }
+
+        .prediction-info {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        canvas {
+            background: #fff;
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>BTC Next-Day Prediction Dashboard</h1>
+    </header>
+
+    <div class="container">
+
+        <div class="prediction-card">
+            <div id="predictionLabel" class="prediction-label up">UP ↑</div>
+            <div id="predictionTime" class="prediction-info"></div>
+            <div id="predictionAccuracy" class="prediction-info"></div>
+            <button id="refreshBtn">Refresh</button>
+        </div>
+
+        <canvas id="btcChart"></canvas>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000";
+        let chart;
+
+        async function fetchPrediction() {
+            try {
+                const r = await fetch(`${API_BASE}/predict`);
+                return await r.json();
+            } catch (e) { console.error(e); return null; }
+        }
+
+        async function fetchHistorical() {
+            try {
+                const r = await fetch("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30&interval=daily");
+                const data = await r.json();
+                const prices = data.prices.map(p => p[1]);
+                const timestamps = data.prices.map(p => new Date(p[0]).toLocaleDateString());
+                return { prices, timestamps };
+            } catch (e) { console.error(e); return null; }
+        }
+
+        async function refreshAll() {
+            const pred = await fetchPrediction();
+            if (pred && pred.status === "success") {
+                const labelEl = document.getElementById("predictionLabel");
+                labelEl.textContent = pred.prediction === "Up" ? "UP ↑" : "DOWN ↓";
+                labelEl.className = 'prediction-label ' + (pred.prediction === "Up" ? 'up' : 'down');
+
+                document.getElementById("predictionTime").textContent = new Date(pred.timestamp).toLocaleString();
+                document.getElementById("predictionAccuracy").textContent = `Model Accuracy: ${pred.accuracy}`;
+            }
+
+            const hist = await fetchHistorical();
+            if (hist) updateChart(hist, pred);
+        }
+
+        function updateChart(data, prediction) {
+            const ctx = document.getElementById("btcChart").getContext("2d");
+            if (chart) chart.destroy();
+
+            const predictedPrice = prediction && prediction.status === "success" ? data.prices[data.prices.length - 1] * (prediction.prediction === "Up" ? 1.02 : 0.98) : null;
+            const predictedLabels = [...data.timestamps, "Tomorrow"];
+            const predictedPrices = [...data.prices, predictedPrice];
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: predictedLabels,
+                    datasets: [{
+                        label: 'BTC Close Price USD',
+                        data: predictedPrices,
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0,123,255,0.1)',
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        segment: {
+                            borderDash: ctx => ctx.p0.label === "Tomorrow" ? [5, 5] : undefined
+                        },
+                        pointBackgroundColor: ctx => ctx.label === "Tomorrow" ? '#ff9800' : '#007bff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `$${ctx.raw.toFixed(2)}`
+                            }
+                        }
+                    },
+                    interaction: { mode: 'nearest', intersect: false },
+                    scales: { y: { beginAtZero: false } }
+                }
+            });
+        }
+
+        document.getElementById("refreshBtn").addEventListener("click", refreshAll);
+
+        refreshAll();
+    </script>
+
+</body>
+</html>
