@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bitcoin Forecast Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <span class="coin-icon">₿</span>
+                </div>
+                <div class="brand-title">
+                    <span>Bitcoin Forecast</span><span class="brand-pro">Pro</span>
+                </div>
+            </div>
+            <div class="asof">
+                <div class="asof-label">As of</div>
+                <div class="asof-time" id="asOfTime">--/--/----, --:--:--</div>
+            </div>
+            <div class="actions">
+                <button id="refreshBtn" class="btn btn-ghost">Refresh</button>
+            </div>
+        </header>
+
+        <!-- Filters -->
+        <section class="filters">
+            <div class="currency-group" role="tablist" aria-label="Currencies">
+                <button class="chip active" data-currency="USD">$ USD</button>
+            </div>
+            <div class="auto-refresh">
+                <label class="switch">
+                    <input type="checkbox" id="autoRefreshToggle" checked />
+                    <span class="slider"></span>
+                </label>
+                <span class="auto-label">Auto refresh</span>
+            </div>
+        </section>
+
+        <!-- Cards -->
+        <section class="cards">
+            <!-- USD -->
+            <article class="card" data-card="USD">
+                <header class="card-head">
+                    <div class="unit">
+                        <div class="unit-label">US DOLLAR</div>
+                        <div class="unit-pair">BTC → USD</div>
+                    </div>
+                    <button class="btn btn-icon"><span class="coin-small">$</span></button>
+                </header>
+                <!-- Main Prediction Display -->
+                <div class="main-prediction">
+                    <div class="prediction-header">
+                        <div class="prediction-label">Next Day Prediction</div>
+                        <div class="prediction-status" id="predictionStatus">Loading...</div>
+                    </div>
+                    <div class="prediction-main" id="mainPrediction">
+                        <div class="trend-indicator loading" id="mainTrendIndicator">
+                            <span class="trend-arrow">⟳</span>
+                            <span class="trend-text">LOADING</span>
+                        </div>
+                    </div>
+                    <div class="prediction-footer">
+                        <div class="accuracy-info" id="accuracyInfo">Model Accuracy: ~61%</div>
+                        <div class="last-updated" id="lastUpdated">Last updated: --</div>
+                    </div>
+                </div>
+                <footer class="card-foot">
+                    <button class="btn btn-muted">Focus</button>
+                    <button class="btn btn-muted" data-update="USD">Update</button>
+                </footer>
+            </article>
+        </section>
+
+        <!-- Chart -->
+        <section class="panel">
+            <div class="panel-head">
+                <div class="panel-title">
+                    <span id="chartTitle">BTC vs US Dollar — Historical Values</span>
+                    <div class="panel-sub">Interactive — hover to inspect values</div>
+                </div>
+                <div class="panel-meta">Series unit: <span id="seriesUnit">$</span></div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="btcChart" height="140"></canvas>
+                <div class="legend">
+                    <span class="legend-dot solid"></span> Actual
+                    <span class="legend-dot dashed"></span> .
+                </div>
+            </div>
+        </section>
+        <footer class="footer">
+            <span>© Bitcoin Forecast Pro</span>
+        </footer>
+    </div>
+
+    
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:5000'; 
+
+        let chartInstance = null;
+
+        // Fetch prediction from Flask backend
+        async function fetchPrediction() {
+            try {
+                document.getElementById('predictionStatus').textContent = 'Fetching...';
+
+                const response = await fetch(`${API_BASE_URL}/predict`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    updatePredictionDisplay(data.prediction, data.timestamp, data.accuracy);
+                    document.getElementById('predictionStatus').textContent = 'Live';
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Error fetching prediction:', error);
+                document.getElementById('predictionStatus').textContent = 'Error';
+                updatePredictionDisplay('Error', null, 'Unable to fetch');
+            }
+        }
+
+        function updatePredictionDisplay(prediction, timestamp, accuracy) {
+            const indicator = document.getElementById('mainTrendIndicator');
+            const trendText = indicator.querySelector('.trend-text');
+            const arrow = indicator.querySelector('.trend-arrow');
+            const accuracyInfo = document.getElementById('accuracyInfo');
+            const lastUpdated = document.getElementById('lastUpdated');
+
+            indicator.className = 'trend-indicator';
+
+            if (prediction === 'Up') {
+                indicator.classList.add('up');
+                arrow.textContent = '↗';
+                trendText.textContent = 'UP';
+            } else if (prediction === 'Down') {
+                indicator.classList.add('down');
+                arrow.textContent = '↘';
+                trendText.textContent = 'DOWN';
+            } else {
+                indicator.classList.add('loading');
+                arrow.textContent = '⚠';
+                trendText.textContent = 'ERROR';
+            }
+
+            if (accuracy) accuracyInfo.textContent = `Model Accuracy: ${accuracy}`;
+            if (timestamp) lastUpdated.textContent = `Last updated: ${new Date(timestamp).toLocaleString()}`;
+        }
+
+        
+        async function fetchHistoricalData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/historical`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    
+                    const flatPrices = data.prices.map(p => p[0]);
+                    updateChart(data.timestamps, flatPrices);
+                } else {
+                    console.error('Historical data error:', data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching historical data:', error);
+            }
+        }
+
+        function updateChart(timestamps, prices) {
+            const ctx = document.getElementById('btcChart').getContext('2d');
+
+            if (chartInstance) chartInstance.destroy();
+
+            const labels = timestamps.map(ts => new Date(ts).toLocaleDateString());
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'BTC Price (USD)',
+                        data: prices,
+                        borderColor: '#5ea1ff',
+                        backgroundColor: 'rgba(94, 161, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#5ea1ff',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#5ea1ff',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false },
+                            ticks: { color: '#9aa0b2', maxTicksLimit: 6 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false },
+                            ticks: {
+                                color: '#9aa0b2',
+                                callback: function (value) { return value.toLocaleString(); }
+                            }
+                        }
+                    },
+                    interaction: { intersect: false, mode: 'index' },
+                    elements: { point: { hoverBackgroundColor: '#5ea1ff', hoverBorderColor: '#ffffff' } }
+                }
+            });
+        }
+
+        
+        async function refreshData() {
+            await Promise.all([fetchPrediction(), fetchHistoricalData()]);
+            document.getElementById('asOfTime').textContent = new Date().toLocaleString();
+        }
+
+        let autoRefreshInterval;
+        function toggleAutoRefresh() {
+            const toggle = document.getElementById('autoRefreshToggle');
+            if (toggle.checked) {
+                autoRefreshInterval = setInterval(refreshData, 5 * 60 * 1000);
+            } else {
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            }
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', refreshData);
+        document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            refreshData();
+            toggleAutoRefresh();
+            document.getElementById('asOfTime').textContent = new Date().toLocaleString();
+        });
+    </script>
+
+</body>
+</html>
