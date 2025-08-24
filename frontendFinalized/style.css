@@ -34,7 +34,7 @@ body {
     padding: 18px 18px 36px;
 }
 
-/* Topbar */
+
 .topbar {
     display: flex;
     align-items: center;
@@ -136,7 +136,7 @@ body {
     font-weight: 800
 }
 
-/* Filters */
+
 .filters {
     display: flex;
     justify-content: space-between;
@@ -176,7 +176,7 @@ body {
     color: #d7dbeb
 }
 
-/* Toggle switch */
+
 .switch {
     position: relative;
     display: inline-block;
@@ -219,7 +219,7 @@ input:checked + .slider {
         transform: translateX(26px)
     }
 
-/* Cards */
+
 .cards {
     display: grid;
     grid-template-columns: repeat(3,1fr);
@@ -257,7 +257,7 @@ input:checked + .slider {
     margin-top: 12px
 }
 
-/* Main Prediction Section */
+
 .main-prediction {
     margin-top: 12px;
     padding: 20px;
@@ -422,7 +422,7 @@ input:checked + .slider {
         background: #252a38
     }
 
-/* Panel (chart) */
+
 .panel {
     margin-top: 18px;
     background: linear-gradient(180deg,#1b1e27,#151823);
@@ -494,7 +494,7 @@ input:checked + .slider {
         height: 12px
     }
 
-/* Footer */
+
 .footer {
     opacity: .7;
     text-align: center;
@@ -502,7 +502,7 @@ input:checked + .slider {
     color: #a8afc3
 }
 
-/* Responsive */
+
 @media (max-width: 1024px) {
     .cards {
         grid-template-columns: repeat(2,1fr)

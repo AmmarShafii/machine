@@ -6,14 +6,14 @@
     <title>Bitcoin Forecast Pro</title>
     <link rel="stylesheet" href="style.css" />
     
-    <!-- Chart.js CDN -->
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app">
-        <!-- Topbar -->
+        
         <header class="topbar">
             <div class="brand">
                 <div class="brand-icon">
@@ -32,7 +32,7 @@
             </div>
         </header>
 
-        <!-- Filters -->
+        
         <section class="filters">
             <div class="currency-group" role="tablist" aria-label="Currencies">
                 <button class="chip active" data-currency="USD">$ USD</button>
@@ -46,9 +46,9 @@
             </div>
         </section>
 
-        <!-- Cards -->
+        
         <section class="cards">
-            <!-- USD -->
+            
             <article class="card" data-card="USD">
                 <header class="card-head">
                     <div class="unit">
@@ -57,7 +57,6 @@
                     </div>
                     <button class="btn btn-icon"><span class="coin-small">$</span></button>
                 </header>
-                <!-- Main Prediction Display -->
                 <div class="main-prediction">
                     <div class="prediction-header">
                         <div class="prediction-label">Next Day Prediction</div>
@@ -81,7 +80,7 @@
             </article>
         </section>
 
-        <!-- Chart -->
+        
         <section class="panel">
             <div class="panel-head">
                 <div class="panel-title">
@@ -105,12 +104,12 @@
 
     
     <script>
-        // API Configuration
+        
         const API_BASE_URL = 'http://localhost:5000'; 
 
         let chartInstance = null;
 
-        // Fetch prediction from Flask backend
+        
         async function fetchPrediction() {
             try {
                 document.getElementById('predictionStatus').textContent = 'Fetching...';

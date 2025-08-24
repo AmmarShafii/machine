@@ -18,7 +18,7 @@ MODEL_PATH = os.getenv("MODEL_PATH", "rf_btc_model.pkl")
 SCALER_PATH = os.getenv("SCALER_PATH", "scaler.pkl")
 ACCURACY_NOTE = "Approximately 60.87%"  
 
-# ---------- Helpers ----------
+
 def load_artifacts():
     try:
         model = joblib.load(MODEL_PATH)
@@ -44,7 +44,7 @@ def fetch_btc_yfinance(days=90):
         return None
 
 def fetch_btc_coingecko(days=90):
-    # Fallback if yfinance fails
+    
     try:
         url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
         params = {"vs_currency": "usd", "days": str(days), "interval": "daily"}
@@ -78,10 +78,7 @@ def compute_rsi(close: pd.Series, period: int = 14) -> pd.Series:
     return rsi
 
 def compute_features(df: pd.DataFrame):
-    """
-    Expected features for model (order matters):
-      [Close, RSI(14), Volume, Volatility(21-day std of returns)]
-    """
+    
     df = df.copy()
     df["Return"] = df["Close"].pct_change()
     df["RSI14"] = compute_rsi(df["Close"], period=14)
@@ -104,10 +101,10 @@ def get_latest_features():
         raise RuntimeError("Unable to fetch sufficient BTC data from any source.")
     return compute_features(df)
 
-# ---------- Load model & scaler at startup ----------
+
 model, scaler = load_artifacts()
 
-# ---------- Routes ----------
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "time": datetime.now(timezone.utc).isoformat()})
@@ -123,10 +120,7 @@ def info():
 
 @app.route("/predict", methods=["GET"])
 def predict():
-    """
-    GET /predict
-    Pulls latest BTC data, computes features, scales, predicts Up/Down for next day.
-    """
+    
     try:
         features = get_latest_features()
         features_scaled = scaler.transform(features.reshape(1, -1))
@@ -147,10 +141,7 @@ def predict():
 
 @app.route("/historical", methods=["GET"])
 def historical():
-    """
-    GET /historical
-    Returns recent historical prices for charting
-    """
+    
     try:
         df = fetch_btc_yfinance(days=30)  
         if df is None:
@@ -176,9 +167,6 @@ def historical():
     except Exception as e:
         app.logger.exception("Historical data fetch failed")
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-
 
 
 if __name__ == "__main__":
